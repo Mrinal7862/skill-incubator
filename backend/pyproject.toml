@@ -1,0 +1,30 @@
+[project]
+name = "skill-incubator-backend"
+version = "0.1.0"
+description = "FastAPI backend for Skill Incubator"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "alembic",
+    "fastapi",
+    "psycopg[binary]",
+    "pydantic[email]",
+    "pydantic-settings",
+    "pwdlib[argon2]",
+    "python-jose[cryptography]",
+    "python-multipart",
+    "razorpay",
+    "sqlalchemy",
+    "uvicorn[standard]",
+]
+
+[dependency-groups]
+dev = [
+    "httpx",
+    "pytest",
+    "ruff",
+]
+
+[tool.uv]
+package = false
