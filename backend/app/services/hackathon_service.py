@@ -19,7 +19,6 @@ class HackathonService:
         organizer_id: UUID,
         payload: HackathonCreate,
     ) -> Hackathon:
-
         hackathon = Hackathon(
             organizer_id=organizer_id,
             name=payload.name,
@@ -33,7 +32,6 @@ class HackathonService:
             event_start=payload.event_start,
             event_end=payload.event_end,
         )
-
         return self.repository.create(db, hackathon)
 
     def get_hackathon(
@@ -41,13 +39,9 @@ class HackathonService:
         db: Session,
         hackathon_id: UUID,
     ) -> Hackathon:
+        hackathon = self.repository.get_by_id(db, hackathon_id)
 
-        hackathon = self.repository.get_by_id(
-            db,
-            hackathon_id,
-        )
-
-        if not hackathon:
+        if hackathon is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Hackathon not found",
@@ -55,16 +49,15 @@ class HackathonService:
 
         return hackathon
 
+    def get_open_hackathons(self, db: Session) -> list[Hackathon]:
+        return self.repository.get_open_hackathons(db)
+
     def get_my_hackathons(
         self,
         db: Session,
         organizer_id: UUID,
     ) -> list[Hackathon]:
-
-        return self.repository.get_by_organizer(
-            db,
-            organizer_id,
-        )
+        return self.repository.get_by_organizer(db, organizer_id)
 
     def update_hackathon(
         self,
@@ -73,11 +66,7 @@ class HackathonService:
         hackathon_id: UUID,
         payload: HackathonUpdate,
     ) -> Hackathon:
-
-        hackathon = self.get_hackathon(
-            db,
-            hackathon_id,
-        )
+        hackathon = self.get_hackathon(db, hackathon_id)
 
         if hackathon.organizer_id != organizer_id:
             raise HTTPException(
@@ -85,17 +74,10 @@ class HackathonService:
                 detail="You do not own this hackathon",
             )
 
-        update_data = payload.model_dump(
-            exclude_unset=True
-        )
-
-        for key, value in update_data.items():
+        for key, value in payload.model_dump(exclude_unset=True).items():
             setattr(hackathon, key, value)
 
-        return self.repository.update(
-            db,
-            hackathon,
-        )
+        return self.repository.update(db, hackathon)
 
     def delete_hackathon(
         self,
@@ -103,11 +85,7 @@ class HackathonService:
         organizer_id: UUID,
         hackathon_id: UUID,
     ) -> None:
-
-        hackathon = self.get_hackathon(
-            db,
-            hackathon_id,
-        )
+        hackathon = self.get_hackathon(db, hackathon_id)
 
         if hackathon.organizer_id != organizer_id:
             raise HTTPException(
@@ -115,7 +93,4 @@ class HackathonService:
                 detail="You do not own this hackathon",
             )
 
-        self.repository.delete(
-            db,
-            hackathon,
-        )
+        self.repository.delete(db, hackathon)

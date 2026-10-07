@@ -649,3 +649,84 @@ input {
     transition-duration: 0.01ms !important;
   }
 }
+/* Skill Incubator — My Teams glitch effects */
+
+@keyframes si-title-glitch {
+  0%, 88%, 100% {
+    transform: translate(0);
+    text-shadow: none;
+    clip-path: inset(0);
+  }
+
+  89% {
+    transform: translate(-2px, 1px);
+    text-shadow: 3px 0 #22d3ee, -3px 0 #e879f9;
+    clip-path: inset(15% 0 65% 0);
+  }
+
+  91% {
+    transform: translate(2px, -1px);
+    text-shadow: -3px 0 #22d3ee, 3px 0 #e879f9;
+    clip-path: inset(55% 0 20% 0);
+  }
+
+  93% {
+    transform: translate(-1px, 0);
+    text-shadow: 2px 0 #22d3ee, -2px 0 #e879f9;
+    clip-path: inset(35% 0 40% 0);
+  }
+
+  95% {
+    transform: translate(0);
+    text-shadow: none;
+    clip-path: inset(0);
+  }
+}
+
+.si-glitch-title {
+  animation: si-title-glitch 4s steps(1, end) infinite;
+  will-change: transform;
+}
+
+@keyframes si-card-glitch {
+  0%, 100% {
+    transform: translate(0);
+    filter: none;
+  }
+
+  20% {
+    transform: translate(-2px, 1px);
+    filter: drop-shadow(2px 0 #22d3ee);
+  }
+
+  40% {
+    transform: translate(2px, -1px);
+    filter: drop-shadow(-2px 0 #e879f9);
+  }
+
+  60% {
+    transform: translate(-1px, 0);
+    filter: none;
+  }
+
+  80% {
+    transform: translate(1px, 1px);
+    filter: drop-shadow(1px 0 #22d3ee);
+  }
+}
+
+.si-glitch-card {
+  position: relative;
+}
+
+.si-glitch-card:hover {
+  animation: si-card-glitch 0.28s steps(2, end) 1;
+  border-color: rgba(34, 211, 238, 0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .si-glitch-title,
+  .si-glitch-card:hover {
+    animation: none;
+  }
+}

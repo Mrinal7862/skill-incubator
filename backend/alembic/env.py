@@ -1,8 +1,10 @@
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-
+from app.models.team import Team, TeamMember
+from app.models.problem_statement import ProblemStatement
 from app.core.config import settings
 from app.core.database import Base
+from app.models.hackathon_registration import HackathonRegistration
 
 from app.models.user import User
 from app.models.hackathon import Hackathon
