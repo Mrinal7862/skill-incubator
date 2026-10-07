@@ -1,8 +1,8 @@
-
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@clerk/react'
 import { motion } from 'framer-motion'
+
 import {
   ArrowLeft,
   CalendarDays,
@@ -15,18 +15,24 @@ import {
   Wallet,
   CalendarCheck,
   Info,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react'
 
 const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:8000/api/v1'
 ).replace(/\/+$/, '')
+
 
 function formatDate(value) {
   if (!value) return 'Not specified'
 
   const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) return 'Not specified'
+  if (Number.isNaN(date.getTime())) {
+    return 'Not specified'
+  }
 
   return date.toLocaleString('en-IN', {
     day: 'numeric',
@@ -56,6 +62,7 @@ function DetailItem({ icon: Icon, label, value }) {
 
       <div className="min-w-0">
         <p className="text-xs text-gray-500">{label}</p>
+
         <p className="mt-1 break-words text-sm font-semibold text-gray-100">
           {value}
         </p>
@@ -73,6 +80,18 @@ export default function HackathonDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const [registration, setRegistration] = useState(null)
+  const [registrationLoading, setRegistrationLoading] =
+    useState(true)
+  const [registering, setRegistering] = useState(false)
+  const [registrationMessage, setRegistrationMessage] =
+    useState('')
+  const [registrationError, setRegistrationError] =
+    useState('')
+
+  // Load hackathon details
+  
+
   const loadDetails = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -81,7 +100,9 @@ export default function HackathonDetails() {
       const token = await getToken()
 
       if (!token) {
-        throw new Error('Your session could not be verified. Please sign in again.')
+        throw new Error(
+          'Your session could not be verified. Please sign in again.'
+        )
       }
 
       const response = await fetch(
@@ -91,7 +112,7 @@ export default function HackathonDetails() {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',
           },
-        },
+        }
       )
 
       if (!response.ok) {
@@ -101,51 +122,235 @@ export default function HackathonDetails() {
           const body = await response.json()
           detail = body.detail || ''
         } catch {
-          // The server may return a non-JSON response.
+          // Non JSON response
         }
 
         if (response.status === 404) {
           throw new Error(
-            detail || 'This hackathon was not found or is no longer available.',
+            detail ||
+              'This hackathon was not found or is no longer available.'
           )
         }
 
-        if (response.status === 401 || response.status === 403) {
-          throw new Error(detail || 'You are not authorized to view this hackathon.')
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          throw new Error(
+            detail ||
+              'You are not authorized to view this hackathon.'
+          )
         }
 
-        throw new Error(detail || `Unable to load details (${response.status}).`)
+        throw new Error(
+          detail ||
+            `Unable to load details (${response.status}).`
+        )
       }
 
       const data = await response.json()
+
       setHackathon(data)
     } catch (err) {
-      setError(err.message || 'Something went wrong while loading this hackathon.')
+      setError(
+        err.message ||
+          'Something went wrong while loading this hackathon.'
+      )
     } finally {
       setLoading(false)
     }
   }, [getToken, id])
 
+
+  // Check whether student is already registered
+
+
+  const loadRegistration = useCallback(async () => {
+    setRegistrationLoading(true)
+    setRegistrationError('')
+
+    try {
+      const token = await getToken()
+
+      if (!token) {
+        throw new Error(
+          'Your session could not be verified.'
+        )
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/registrations/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(
+          `Unable to check registration (${response.status}).`
+        )
+      }
+
+      const registrations = await response.json()
+
+      const currentRegistration = Array.isArray(
+        registrations
+      )
+        ? registrations.find(
+            (item) =>
+              String(item.hackathon_id) === String(id)
+          )
+        : null
+
+      setRegistration(currentRegistration || null)
+    } catch (err) {
+      console.error(
+        'Failed to check registration:',
+        err
+      )
+
+      setRegistrationError(
+        err.message ||
+          'Unable to check your registration status.'
+      )
+    } finally {
+      setRegistrationLoading(false)
+    }
+  }, [getToken, id])
+
   useEffect(() => {
     loadDetails()
-  }, [loadDetails])
+    loadRegistration()
+  }, [loadDetails, loadRegistration])
 
-  const status = String(hackathon?.status || 'OPEN').toUpperCase()
+  // Register
 
-  const statusClass = {
-    OPEN: 'border-cyan-300/30 bg-cyan-300/10 text-cyan-200',
-    LIVE: 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200',
-    DRAFT: 'border-amber-300/30 bg-amber-300/10 text-amber-200',
-    ENDED: 'border-white/10 bg-white/5 text-gray-400',
-    CANCELLED: 'border-rose-300/30 bg-rose-300/10 text-rose-200',
-  }[status] || 'border-white/10 bg-white/5 text-gray-300'
+  async function handleRegister() {
+    if (!hackathon || registering) return
+
+    setRegistrationMessage('')
+    setRegistrationError('')
+
+    // Already registered
+    if (registration) {
+      return
+    }
+
+    const fee = Number(
+      hackathon.registration_amount || 0
+    )
+
+    // Payment is not implemented yet
+    if (fee > 0) {
+      setRegistrationError(
+        'This hackathon has a registration fee. Payment integration is required before registration can be completed.'
+      )
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Register for "${hackathon.name}"?`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setRegistering(true)
+
+      const token = await getToken()
+
+      if (!token) {
+        throw new Error(
+          'Your session has expired. Please sign in again.'
+        )
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/registrations`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            hackathon_id: hackathon.id,
+            team_id: null,
+            problem_statement_id: null,
+          }),
+        }
+      )
+
+      let body = null
+
+      try {
+        body = await response.json()
+      } catch {
+        body = null
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          body?.detail ||
+            `Registration failed (${response.status}).`
+        )
+      }
+
+      setRegistration(body)
+
+      setRegistrationMessage(
+        'You have successfully registered for this hackathon.'
+      )
+    } catch (err) {
+      console.error(
+        'Hackathon registration failed:',
+        err
+      )
+
+      setRegistrationError(
+        err.message ||
+          'Unable to complete registration.'
+      )
+    } finally {
+      setRegistering(false)
+    }
+  }
+
+  const status = String(
+    hackathon?.status || 'OPEN'
+  ).toUpperCase()
+
+  const statusClass =
+    {
+      OPEN:
+        'border-cyan-300/30 bg-cyan-300/10 text-cyan-200',
+      LIVE:
+        'border-emerald-300/30 bg-emerald-300/10 text-emerald-200',
+      DRAFT:
+        'border-amber-300/30 bg-amber-300/10 text-amber-200',
+      ENDED:
+        'border-white/10 bg-white/5 text-gray-400',
+      CANCELLED:
+        'border-rose-300/30 bg-rose-300/10 text-rose-200',
+    }[status] ||
+    'border-white/10 bg-white/5 text-gray-300'
 
   if (loading) {
     return (
       <main className="grid min-h-[60vh] place-items-center bg-[#09090f] px-6 text-gray-300">
         <div className="text-center">
-          <RefreshCw size={28} className="mx-auto animate-spin text-cyan-300" />
-          <p className="mt-4 text-sm">Loading hackathon details...</p>
+          <RefreshCw
+            size={28}
+            className="mx-auto animate-spin text-cyan-300"
+          />
+
+          <p className="mt-4 text-sm">
+            Loading hackathon details...
+          </p>
         </div>
       </main>
     )
@@ -164,13 +369,16 @@ export default function HackathonDetails() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-gray-400">
-            {error || 'This hackathon is not available.'}
+            {error ||
+              'This hackathon is not available.'}
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <button
               type="button"
-              onClick={() => navigate('/student/hackathons')}
+              onClick={() =>
+                navigate('/student/hackathons')
+              }
               className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-gray-200 hover:bg-white/5"
             >
               Back to Explore
@@ -189,33 +397,44 @@ export default function HackathonDetails() {
     )
   }
 
-  const isFree = Number(hackathon.registration_amount || 0) === 0
+  const isFree =
+    Number(hackathon.registration_amount || 0) === 0
+
+  const isRegistered = Boolean(registration)
 
   return (
     <main className="min-h-screen bg-[#09090f] px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
+
+        {/* Back */}
         <button
           type="button"
-          onClick={() => navigate('/student/hackathons')}
+          onClick={() =>
+            navigate('/student/hackathons')
+          }
           className="mb-6 inline-flex items-center gap-2 rounded-lg text-sm text-gray-400 transition hover:text-cyan-300"
         >
           <ArrowLeft size={17} />
           Back to Explore Hackathons
         </button>
 
+        {/* Main */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           className="overflow-hidden rounded-3xl border border-white/10 bg-[#101019]"
         >
+          {/* Hero */}
           <div className="relative min-h-64 overflow-hidden border-b border-white/10 bg-gradient-to-br from-cyan-950 via-[#17152a] to-violet-950 sm:min-h-80">
+
             {hackathon.image_url && (
               <img
                 src={hackathon.image_url}
                 alt={hackathon.name}
                 className="absolute inset-0 h-full w-full object-cover"
                 onError={(event) => {
-                  event.currentTarget.style.display = 'none'
+                  event.currentTarget.style.display =
+                    'none'
                 }}
               />
             )}
@@ -224,20 +443,33 @@ export default function HackathonDetails() {
 
             {!hackathon.image_url && (
               <div className="absolute inset-0 grid place-items-center">
-                <Code2 size={72} className="text-cyan-300/50" />
+                <Code2
+                  size={72}
+                  className="text-cyan-300/50"
+                />
               </div>
             )}
 
             <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
               <div className="mb-4 flex flex-wrap items-center gap-3">
+
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-black/40 px-3 py-1.5 text-xs font-semibold text-cyan-200">
                   <Sparkles size={13} />
                   Skill Incubator
                 </span>
 
-                <span className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClass}`}>
+                <span
+                  className={`rounded-full border px-3 py-1.5 text-xs font-bold ${statusClass}`}
+                >
                   {status}
                 </span>
+
+                {isRegistered && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5 text-xs font-bold text-emerald-200">
+                    <CheckCircle2 size={13} />
+                    REGISTERED
+                  </span>
+                )}
               </div>
 
               <h1 className="max-w-4xl text-3xl font-black leading-tight sm:text-5xl">
@@ -245,49 +477,70 @@ export default function HackathonDetails() {
               </h1>
 
               <p className="mt-4 flex items-center gap-2 text-sm text-gray-300">
-                <CalendarDays size={16} className="text-cyan-300" />
-                Event starts {formatDate(hackathon.event_start)}
+                <CalendarDays
+                  size={16}
+                  className="text-cyan-300"
+                />
+                Event starts{' '}
+                {formatDate(hackathon.event_start)}
               </p>
             </div>
           </div>
 
+          {/* Content */}
           <div className="grid gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_320px] lg:p-10">
+
+            {/* Left */}
             <section>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
                 About the event
               </p>
 
-              <h2 className="mt-3 text-xl font-bold">Hackathon overview</h2>
+              <h2 className="mt-3 text-xl font-bold">
+                Hackathon overview
+              </h2>
 
               <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-gray-400">
-                {hackathon.description || 'The organizer has not added a description yet.'}
+                {hackathon.description ||
+                  'The organizer has not added a description yet.'}
               </p>
 
-              <h2 className="mt-9 text-xl font-bold">Event information</h2>
+              {/* Event information */}
+              <h2 className="mt-9 text-xl font-bold">
+                Event information
+              </h2>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <DetailItem
                   icon={CalendarCheck}
                   label="Registration starts"
-                  value={formatDate(hackathon.registration_start)}
+                  value={formatDate(
+                    hackathon.registration_start
+                  )}
                 />
 
                 <DetailItem
                   icon={Clock3}
                   label="Registration ends"
-                  value={formatDate(hackathon.registration_end)}
+                  value={formatDate(
+                    hackathon.registration_end
+                  )}
                 />
 
                 <DetailItem
                   icon={CalendarDays}
                   label="Event starts"
-                  value={formatDate(hackathon.event_start)}
+                  value={formatDate(
+                    hackathon.event_start
+                  )}
                 />
 
                 <DetailItem
                   icon={CalendarDays}
                   label="Event ends"
-                  value={formatDate(hackathon.event_end)}
+                  value={formatDate(
+                    hackathon.event_end
+                  )}
                 />
 
                 <DetailItem
@@ -304,17 +557,26 @@ export default function HackathonDetails() {
               </div>
             </section>
 
+            {/* Registration panel */}
             <aside>
               <div className="rounded-2xl border border-white/10 bg-[#09090f] p-5 sm:p-6 lg:sticky lg:top-6">
+
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-                  Registration fee
+                  Registration
                 </p>
 
                 <div className="mt-3 flex items-center gap-2">
-                  {!isFree && <IndianRupee size={25} className="text-cyan-300" />}
+                  {!isFree && (
+                    <IndianRupee
+                      size={25}
+                      className="text-cyan-300"
+                    />
+                  )}
 
                   <span className="text-3xl font-black text-white">
-                    {formatFee(hackathon.registration_amount)}
+                    {formatFee(
+                      hackathon.registration_amount
+                    )}
                   </span>
                 </div>
 
@@ -326,43 +588,201 @@ export default function HackathonDetails() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-semibold">Team participation</p>
+                    <p className="text-sm font-semibold">
+                      Team participation
+                    </p>
+
                     <p className="mt-1 text-xs leading-5 text-gray-500">
-                      Team size must be between {hackathon.min_team_size} and {hackathon.max_team_size} members.
+                      Team size must be between{' '}
+                      {hackathon.min_team_size} and{' '}
+                      {hackathon.max_team_size}{' '}
+                      members.
                     </p>
                   </div>
                 </div>
 
+                {/* Registration window */}
                 <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.025] p-4">
                   <p className="text-xs font-semibold text-gray-300">
                     Registration window
                   </p>
+
                   <p className="mt-2 text-sm text-gray-400">
-                    {formatDate(hackathon.registration_start)}
+                    {formatDate(
+                      hackathon.registration_start
+                    )}
                   </p>
-                  <p className="my-1 text-xs text-gray-600">to</p>
+
+                  <p className="my-1 text-xs text-gray-600">
+                    to
+                  </p>
+
                   <p className="text-sm text-gray-400">
-                    {formatDate(hackathon.registration_end)}
+                    {formatDate(
+                      hackathon.registration_end
+                    )}
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  disabled
-                  title="Registration flow will be added in the next step"
-                  className="mt-5 w-full cursor-not-allowed rounded-xl bg-cyan-300/40 px-4 py-3.5 text-sm font-bold text-[#09090f]/70"
-                >
-                  Registration coming next
-                </button>
+                {/* Registration status */}
+                {isRegistered && (
+                  <div className="mt-5 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        size={18}
+                        className="text-emerald-300"
+                      />
+
+                      <p className="text-sm font-semibold text-emerald-200">
+                        You're registered
+                      </p>
+                    </div>
+
+                    <p className="mt-2 text-xs leading-5 text-gray-500">
+                      Your registration has been created
+                      successfully.
+                    </p>
+                  </div>
+                )}
+
+                {/* Success message */}
+                {registrationMessage && (
+                  <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2
+                        size={17}
+                        className="mt-0.5 shrink-0 text-emerald-300"
+                      />
+
+                      <p className="text-xs leading-5 text-emerald-200">
+                        {registrationMessage}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error */}
+                {registrationError && (
+                  <div className="mt-4 rounded-xl border border-rose-300/20 bg-rose-300/5 p-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle
+                        size={17}
+                        className="mt-0.5 shrink-0 text-rose-300"
+                      />
+
+                      <p className="text-xs leading-5 text-rose-200">
+                        {registrationError}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Register */}
+                {registrationLoading ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-3.5 text-sm font-bold text-gray-500"
+                  >
+                    <RefreshCw
+                      size={16}
+                      className="animate-spin"
+                    />
+                    Checking registration...
+                  </button>
+                ) : isRegistered ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-300/15 px-4 py-3.5 text-sm font-bold text-emerald-300"
+                  >
+                    <CheckCircle2 size={17} />
+                    Already Registered
+                  </button>
+                ) : !isFree ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-300/15 px-4 py-3.5 text-sm font-bold text-amber-300"
+                    title="Payment integration is not available yet"
+                  >
+                    <Wallet size={17} />
+                    Payment Required
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRegister}
+                    disabled={
+                      registering ||
+                      status !== 'OPEN'
+                    }
+                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-3.5 text-sm font-bold text-[#09090f] transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:bg-cyan-300/30 disabled:text-[#09090f]/50"
+                  >
+                    {registering ? (
+                      <>
+                        <RefreshCw
+                          size={16}
+                          className="animate-spin"
+                        />
+                        Registering...
+                      </>
+                    ) : status !== 'OPEN' ? (
+                      'Registration Closed'
+                    ) : (
+                      <>
+                        Register Now
+                        <ArrowRightIcon />
+                      </>
+                    )}
+                  </button>
+                )}
 
                 <p className="mt-3 text-center text-xs leading-5 text-gray-600">
-                  Registration functionality has not been enabled yet.
+                  {isRegistered
+                    ? 'You can view this event from Your Hackathons.'
+                    : isFree
+                      ? 'Free registration. Team and problem statement can be attached later.'
+                      : 'Payment workflow will be connected next.'}
                 </p>
+
+                {/* Go to registrations */}
+                {isRegistered && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate('/student/registrations')
+                    }
+                    className="mt-4 w-full rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-gray-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    Go to Your Hackathons
+                  </button>
+                )}
+
               </div>
             </aside>
           </div>
         </motion.section>
       </div>
     </main>
+  )
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
   )
 }

@@ -52,82 +52,66 @@ export default function DashboardLayout({ role, user, children }) {
 
   const navigation = isOrganizer
     ? [
-        {
-          label: "Dashboard",
-          to: "/organizer",
-          icon: LayoutDashboard,
-          end: true,
-        },
-        {
-          label: "Hackathons",
-          to: "/organizer/hackathons",
-          icon: Trophy,
-        },
-        {
-          label: "Participants",
-          to: "/organizer/participants",
-          icon: Users,
-        },
-        {
-          label: "Submissions",
-          to: "/organizer/submissions",
-          icon: FileText,
-        },
-        {
-          label: "Evaluation",
-          to: "/organizer/evaluation",
-          icon: ClipboardCheck,
-        },
-        {
-          label: "Results",
-          to: "/organizer/results",
-          icon: Award,
-        },
-        {
-          label: "Analytics",
-          to: "/organizer/analytics",
-          icon: BarChart3,
-        },
-      ]
-    : [
-        {
-          label: "Dashboard",
-          to: "/student",
-          icon: LayoutDashboard,
-          end: true,
-        },
-        {
-          label: "Explore Hackathons",
-          to: "/student/hackathons",
-          icon: Trophy,
-        },
-        {
-          label: "My Registrations",
-          to: "/student/registrations",
-          icon: CalendarDays,
-        },
-        {
-          label: "My Submissions",
-          to: "/student/submissions",
-          icon: FileText,
-        },
-        {
-          label: "My Teams",
-          to: "/student/teams",
-          icon: Users,
-        },
-        {
-          label: "Problem Statements",
-          to: "/student/problem-statements",
-          icon: ClipboardCheck,
-        },
-        {
-          label: "Results",
-          to: "/student/results",
-          icon: Award,
-        },
-      ];
-
+      {
+        label: "Dashboard",
+        to: "/organizer",
+        icon: LayoutDashboard,
+        end: true,
+      },
+      {
+        label: "Hackathons",
+        to: "/organizer/hackathons",
+        icon: Trophy,
+      },
+      {
+        label: "Participants",
+        to: "/organizer/participants",
+        icon: Users,
+      },
+      {
+        label: "Submissions",
+        to: "/organizer/submissions",
+        icon: FileText,
+      },
+      {
+        label: "Evaluation",
+        to: "/organizer/evaluation",
+        icon: ClipboardCheck,
+      },
+      {
+        label: "Results",
+        to: "/organizer/results",
+        icon: Award,
+      },
+      {
+        label: "Analytics",
+        to: "/organizer/analytics",
+        icon: BarChart3,
+      },
+    ]
+  : [
+  {
+    label: "Dashboard",
+    to: "/student",
+    icon: LayoutDashboard,
+    end: true,
+  },
+  {
+    label: "Explore Hackathons",
+    to: "/student/hackathons",
+    icon: Trophy,
+  },
+  {
+    label: "Your Hackathons",
+    to: "/student/registrations",
+    icon: CalendarDays,
+  },
+  {
+    label: "Results",
+    to: "/student/results",
+    icon: Award,
+  },
+];
   function isActive(path, end = false) {
     if (end) return location.pathname === path;
     return (
@@ -175,9 +159,8 @@ export default function DashboardLayout({ role, user, children }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/10 bg-[#0d0d16] transition-transform duration-200 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-white/10 bg-[#0d0d16] transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0`}
       >
         {/* Brand */}
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-white/10 px-5">
@@ -242,11 +225,10 @@ export default function DashboardLayout({ role, user, children }) {
                 to={to}
                 onClick={closeMobileSidebar}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${
-                  active
+                className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${active
                     ? "border-cyan-400/20 bg-cyan-400/10 font-semibold text-cyan-300"
                     : "border-transparent text-gray-300 hover:bg-white/[0.04] hover:text-cyan-300"
-                }`}
+                  }`}
               >
                 <Icon size={19} />
                 <span className="min-w-0 flex-1">{label}</span>
@@ -270,11 +252,10 @@ export default function DashboardLayout({ role, user, children }) {
             aria-current={
               isActive(profilePath) ? "page" : undefined
             }
-            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${
-              isActive(profilePath)
+            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${isActive(profilePath)
                 ? "border-cyan-400/20 bg-cyan-400/10 font-semibold text-cyan-300"
                 : "border-transparent text-gray-300 hover:bg-white/[0.04] hover:text-cyan-300"
-            }`}
+              }`}
           >
             <UserRound size={19} />
             My Profile
@@ -283,11 +264,10 @@ export default function DashboardLayout({ role, user, children }) {
           <Link
             to={settingsPath}
             onClick={closeMobileSidebar}
-            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${
-              isActive(settingsPath)
+            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-sm transition ${isActive(settingsPath)
                 ? "border-cyan-400/20 bg-cyan-400/10 font-semibold text-cyan-300"
                 : "border-transparent text-gray-300 hover:bg-white/[0.04] hover:text-cyan-300"
-            }`}
+              }`}
           >
             <Settings size={19} />
             Settings
@@ -385,9 +365,8 @@ export default function DashboardLayout({ role, user, children }) {
 
               <ChevronDown
                 size={16}
-                className={`text-gray-400 transition-transform ${
-                  profileOpen ? "rotate-180" : ""
-                }`}
+                className={`text-gray-400 transition-transform ${profileOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 

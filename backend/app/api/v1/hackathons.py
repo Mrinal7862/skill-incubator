@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_organizer, get_current_user
+from app.core.dependencies import (get_current_organizer, get_current_user)
 from app.models.hackathon import HackathonStatus
 from app.models.user import User, UserRole
 from app.schemas.hackathon import (
@@ -12,6 +12,8 @@ from app.schemas.hackathon import (
     HackathonResponse,
     HackathonUpdate,
 )
+
+
 from app.services.hackathon_service import HackathonService
 
 
@@ -28,7 +30,7 @@ def list_open_hackathons(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List published hackathons for authenticated users."""
+    service.sync_event_statuses(db)
     return service.get_open_hackathons(db)
 
 
@@ -54,6 +56,7 @@ def get_my_hackathons(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_organizer),
 ):
+    service.sync_event_statuses(db)
     return service.get_my_hackathons(
         db=db,
         organizer_id=current_user.id,
@@ -66,6 +69,7 @@ def get_hackathon(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    service.sync_event_statuses(db)
     hackathon = service.get_hackathon(
         db=db,
         hackathon_id=hackathon_id,

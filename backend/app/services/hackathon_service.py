@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.hackathon import Hackathon
 from app.repositories.hackathon_repository import HackathonRepository
 from app.schemas.hackathon import HackathonCreate, HackathonUpdate
-
+from app.models.hackathon import Hackathon, HackathonStatus
 
 class HackathonService:
 
@@ -58,6 +58,12 @@ class HackathonService:
         organizer_id: UUID,
     ) -> list[Hackathon]:
         return self.repository.get_by_organizer(db, organizer_id)
+    
+    def get_open_hackathons(
+        self,
+        db: Session,
+    ) -> list[Hackathon]:
+        return self.repository.get_open_hackathons(db)
 
     def update_hackathon(
         self,
@@ -94,3 +100,9 @@ class HackathonService:
             )
 
         self.repository.delete(db, hackathon)
+
+    def sync_event_statuses(
+    self,
+    db: Session,
+    ) -> None:
+        self.repository.sync_event_statuses(db)             
