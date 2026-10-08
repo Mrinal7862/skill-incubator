@@ -5,9 +5,9 @@ from app.models.problem_statement import ProblemStatement
 from app.core.config import settings
 from app.core.database import Base
 from app.models.hackathon_registration import HackathonRegistration
-
+from app.models.submission import Submission
 from app.models.user import User
-from app.models.hackathon import Hackathon
+from app.models.hackathon import Hackathon, HackathonStatus
 
 config = context.config
 

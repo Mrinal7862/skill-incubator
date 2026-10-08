@@ -350,7 +350,7 @@ export default function AppRoutes() {
               routing="path"
               path="/login"
               signUpUrl="/register"
-              forceRedirectUrl="/student"
+              forceRedirectUrl="/"
             />
           </main>
         }
@@ -365,7 +365,7 @@ export default function AppRoutes() {
               routing="path"
               path="/register"
               signInUrl="/login"
-              forceRedirectUrl="/student"
+              forceRedirectUrl="/"
             />
           </main>
         }

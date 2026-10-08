@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.core.database import engine
 from app.api.router import api_router
 
-
 app = FastAPI(
     title="Skill Incubator API" ,
     description="Backend API for Skill Incubator",

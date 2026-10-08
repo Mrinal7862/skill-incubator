@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
@@ -7,8 +6,6 @@ import {
   Medal,
   Award,
   Users,
-  Target,
-  CalendarDays,
   CheckCircle2,
   Clock3,
   Eye,
@@ -18,152 +15,13 @@ import {
   RotateCcw,
   AlertCircle,
   Sparkles,
-  ExternalLink,
   Filter,
   Globe,
   EyeOff,
 } from "lucide-react";
+import { useAuth } from "@clerk/react";
 
-const HACKATHONS = [
-  { id: "hackathon-1", name: "Minerva Innovation Challenge" },
-  { id: "hackathon-2", name: "CampusForge Hackathon" },
-];
-
-const INITIAL_RESULTS = [
-  {
-    id: "RES-001",
-    hackathonId: "hackathon-1",
-    hackathon: "Minerva Innovation Challenge",
-    project: "AttendAI",
-    team: "Code Warriors",
-    problem: "AI-Powered Smart Attendance",
-    members: ["Aarav Sharma", "Rahul Verma"],
-    score: 8.5,
-    innovation: 9,
-    technical: 8,
-    impact: 9,
-    presentation: 8,
-    rank: 1,
-    prize: "Winner",
-    feedback: "Strong use case and a clear product direction.",
-    published: true,
-    evaluatedAt: "2026-09-28T15:30:00.000Z",
-  },
-  {
-    id: "RES-002",
-    hackathonId: "hackathon-1",
-    hackathon: "Minerva Innovation Challenge",
-    project: "GreenCampus",
-    team: "Neural Ninjas",
-    problem: "Sustainable Campus Assistant",
-    members: ["Priya Singh", "Karan Gupta"],
-    score: 7.0,
-    innovation: 7,
-    technical: 7,
-    impact: 8,
-    presentation: 6,
-    rank: 2,
-    prize: "Runner-up",
-    feedback: "Promising concept. Improve the demonstration and implementation details.",
-    published: true,
-    evaluatedAt: "2026-09-28T15:45:00.000Z",
-  },
-  {
-    id: "RES-003",
-    hackathonId: "hackathon-1",
-    hackathon: "Minerva Innovation Challenge",
-    project: "VisionTrack",
-    team: "Vision Builders",
-    problem: "AI-Powered Smart Attendance",
-    members: ["Sneha Patel", "Rohan Singh"],
-    score: 6.8,
-    innovation: 7,
-    technical: 7,
-    impact: 6,
-    presentation: 7,
-    rank: 3,
-    prize: "Second Runner-up",
-    feedback: "Good prototype. Validate the approach with more test cases.",
-    published: true,
-    evaluatedAt: "2026-09-28T16:00:00.000Z",
-  },
-  {
-    id: "RES-004",
-    hackathonId: "hackathon-1",
-    hackathon: "Minerva Innovation Challenge",
-    project: "CampusPulse",
-    team: "The Innovators",
-    problem: "Sustainable Campus Assistant",
-    members: ["Ananya Singh", "Vikas Mishra"],
-    score: 6.2,
-    innovation: 6,
-    technical: 6,
-    impact: 7,
-    presentation: 6,
-    rank: 4,
-    prize: "Participant",
-    feedback: "A useful idea with opportunities to improve usability.",
-    published: false,
-    evaluatedAt: "2026-09-28T16:15:00.000Z",
-  },
-  {
-    id: "RES-005",
-    hackathonId: "hackathon-2",
-    hackathon: "CampusForge Hackathon",
-    project: "LearnSphere",
-    team: "Pixel Pioneers",
-    problem: "Intelligent Learning Companion",
-    members: ["Ananya Gupta", "Rishabh Verma"],
-    score: 9.0,
-    innovation: 8,
-    technical: 9,
-    impact: 9,
-    presentation: 10,
-    rank: 1,
-    prize: "Winner",
-    feedback: "Excellent presentation and a well-structured implementation.",
-    published: true,
-    evaluatedAt: "2026-09-29T14:00:00.000Z",
-  },
-  {
-    id: "RES-006",
-    hackathonId: "hackathon-2",
-    hackathon: "CampusForge Hackathon",
-    project: "CivicConnect",
-    team: "Build Beyond",
-    problem: "Local Community Problem Solver",
-    members: ["Aditya Mishra", "Meera Patel"],
-    score: 8.0,
-    innovation: 8,
-    technical: 8,
-    impact: 9,
-    presentation: 7,
-    rank: 2,
-    prize: "Runner-up",
-    feedback: "Strong community focus. Further clarify issue verification.",
-    published: true,
-    evaluatedAt: "2026-09-29T14:30:00.000Z",
-  },
-  {
-    id: "RES-007",
-    hackathonId: "hackathon-2",
-    hackathon: "CampusForge Hackathon",
-    project: "SkillBridge",
-    team: "Future Forge",
-    problem: "Intelligent Learning Companion",
-    members: ["Dev Sharma", "Isha Singh"],
-    score: 7.5,
-    innovation: 8,
-    technical: 7,
-    impact: 8,
-    presentation: 7,
-    rank: 3,
-    prize: "Second Runner-up",
-    feedback: "A solid concept. Demonstrate the key features more clearly.",
-    published: false,
-    evaluatedAt: "2026-09-29T15:00:00.000Z",
-  },
-];
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
 const MEDALS = [
   {
@@ -190,6 +48,7 @@ function formatDate(value) {
   if (!value) return "—";
 
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return "—";
 
   return date.toLocaleDateString("en-IN", {
@@ -197,57 +56,6 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   });
-}
-
-function exportResults(results) {
-  const columns = [
-    ["Hackathon", "hackathon"],
-    ["Rank", "rank"],
-    ["Project", "project"],
-    ["Team", "team"],
-    ["Problem Statement", "problem"],
-    ["Overall Score", "score"],
-    ["Innovation", "innovation"],
-    ["Technical", "technical"],
-    ["Impact", "impact"],
-    ["Presentation", "presentation"],
-    ["Prize", "prize"],
-    ["Published", "published"],
-    ["Evaluated On", "evaluatedAt"],
-  ];
-
-  const escapeCSV = (value) =>
-    `"${String(value ?? "").replace(/"/g, '""')}"`;
-
-  const csv = [
-    columns.map(([heading]) => escapeCSV(heading)).join(","),
-    ...results.map((result) =>
-      columns
-        .map(([, key]) => {
-          let value = result[key];
-
-          if (key === "published") value = value ? "Yes" : "No";
-          if (key === "evaluatedAt") value = formatDate(value);
-
-          return escapeCSV(value);
-        })
-        .join(","),
-    ),
-  ].join("\r\n");
-
-  const blob = new Blob(["\uFEFF" + csv], {
-    type: "text/csv;charset=utf-8;",
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "skill-incubator-results.csv";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 function StatusBadge({ published }) {
@@ -264,13 +72,183 @@ function StatusBadge({ published }) {
   );
 }
 
-function ResultDetailsModal({ result, onClose, onTogglePublish }) {
-  const criteria = [
-    ["Innovation", result.innovation],
-    ["Technical execution", result.technical],
-    ["Impact", result.impact],
-    ["Presentation", result.presentation],
+function exportResults(results) {
+  const columns = [
+    ["Hackathon", "hackathon"],
+    ["Rank", "rank"],
+    ["Project", "project"],
+    ["Team", "team"],
+    ["Problem Statement", "problem"],
+    ["Prize", "prize"],
+    ["Published", "published"],
   ];
+
+  const escapeCSV = (value) =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+  const csv = [
+    columns.map(([heading]) => escapeCSV(heading)).join(","),
+    ...results.map((result) =>
+      columns
+        .map(([, key]) => {
+          let value = result[key];
+
+          if (key === "published") {
+            value = value ? "Yes" : "No";
+          }
+
+          return escapeCSV(value);
+        })
+        .join(","),
+    ),
+  ].join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "skill-incubator-results.csv";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function normalizeSubmission(submission) {
+  return {
+    id: submission.id,
+    project:
+      submission.project_name ||
+      submission.project ||
+      "Untitled Project",
+
+    team:
+      submission.team_name ||
+      submission.team?.name ||
+      "Unknown Team",
+
+    teamId:
+      submission.team_id ||
+      submission.team?.id ||
+      null,
+
+    problem:
+      submission.problem_statement_name ||
+      submission.problem_statement ||
+      submission.problem_statement?.title ||
+      "Problem Statement",
+
+    members:
+      submission.members ||
+      submission.team_members ||
+      [],
+
+    description: submission.description || "",
+  };
+}
+
+function WinnerSelection({
+  submissions,
+  selectedWinners,
+  onSelect,
+  saving,
+}) {
+  const positions = [
+    {
+      key: "first_submission_id",
+      label: "1st Place",
+      color: "text-amber-200",
+      border: "border-amber-300/20",
+    },
+    {
+      key: "second_submission_id",
+      label: "2nd Place",
+      color: "text-slate-200",
+      border: "border-slate-300/20",
+    },
+    {
+      key: "third_submission_id",
+      label: "3rd Place",
+      color: "text-orange-200",
+      border: "border-orange-300/20",
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {positions.map((position) => (
+        <div
+          key={position.key}
+          className={`rounded-2xl border ${position.border} bg-black/10 p-4`}
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className={`text-sm font-bold ${position.color}`}>
+              {position.label}
+            </p>
+
+            {selectedWinners[position.key] && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onSelect(position.key, "")}
+                className="text-xs text-slate-500 transition hover:text-red-300"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <select
+            value={selectedWinners[position.key] || ""}
+            disabled={saving}
+            onChange={(event) =>
+              onSelect(position.key, event.target.value)
+            }
+            className="w-full rounded-xl border border-white/10 bg-[#0b101b] px-4 py-3 text-sm text-slate-200 outline-none focus:border-cyan-300/40 disabled:opacity-50"
+          >
+            <option value="">
+              Select submission
+            </option>
+
+            {submissions.map((submission) => {
+              const selectedElsewhere = Object.entries(
+                selectedWinners,
+              ).some(
+                ([key, value]) =>
+                  key !== position.key &&
+                  value === submission.id,
+              );
+
+              return (
+                <option
+                  key={submission.id}
+                  value={submission.id}
+                  disabled={selectedElsewhere}
+                >
+                  {submission.project} — {submission.team}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ResultDetailsModal({
+  result,
+  onClose,
+  onPublish,
+  publishing,
+}) {
+  if (!result) return null;
 
   return (
     <motion.div
@@ -279,13 +257,14 @@ function ResultDetailsModal({ result, onClose, onTogglePublish }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
       }}
     >
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="result-details-title"
         className="my-auto max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-cyan-300/15 bg-[#101523] shadow-2xl"
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -297,14 +276,13 @@ function ResultDetailsModal({ result, onClose, onTogglePublish }) {
               Result details
             </p>
 
-            <h2
-              id="result-details-title"
-              className="mt-2 text-xl font-bold text-white sm:text-2xl"
-            >
+            <h2 className="mt-2 text-xl font-bold text-white sm:text-2xl">
               {result.project}
             </h2>
 
-            <p className="mt-1 text-sm text-slate-400">{result.team}</p>
+            <p className="mt-1 text-sm text-slate-400">
+              {result.team}
+            </p>
           </div>
 
           <button
@@ -325,83 +303,71 @@ function ResultDetailsModal({ result, onClose, onTogglePublish }) {
               </p>
 
               <p className="mt-2 text-2xl font-black text-white">
-                #{result.rank}{" "}
-                <span className="text-base font-semibold text-cyan-300">
+                #{result.rank}
+                <span className="ml-2 text-base font-semibold text-cyan-300">
                   {result.prize}
                 </span>
               </p>
             </div>
 
-            <div className="text-right">
-              <p className="text-xs text-slate-500">Overall score</p>
-              <p className="mt-1 text-3xl font-black text-cyan-300">
-                {Number(result.score).toFixed(1)}
-                <span className="ml-1 text-sm text-slate-500">/ 10</span>
-              </p>
-            </div>
+            <StatusBadge published={result.published} />
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Hackathon
             </p>
+
             <p className="mt-2 text-sm font-medium text-slate-200">
               {result.hackathon}
             </p>
+          </div>
 
-            <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Problem statement
             </p>
+
             <p className="mt-2 text-sm leading-6 text-slate-300">
               {result.problem}
             </p>
           </div>
 
           <div>
-            <h3 className="font-bold text-white">Score breakdown</h3>
+            <h3 className="font-bold text-white">
+              Team members
+            </h3>
 
-            <div className="mt-4 space-y-4">
-              {criteria.map(([label, score]) => (
-                <div key={label}>
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm text-slate-300">{label}</span>
-                    <span className="text-sm font-bold text-cyan-300">
-                      {score}/10
-                    </span>
-                  </div>
-
-                  <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
-                      style={{ width: `${(score / 10) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-white">Team members</h3>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {result.members.map((member) => (
-                <span
-                  key={member}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-300"
-                >
-                  {member}
-                </span>
-              ))}
-            </div>
+            {result.members?.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.members.map((member, index) => (
+                  <span
+                    key={`${member}-${index}`}
+                    className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-300"
+                  >
+                    {typeof member === "string"
+                      ? member
+                      : member.name ||
+                        member.email ||
+                        "Member"}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">
+                Team member information unavailable.
+              </p>
+            )}
           </div>
 
           <div className="rounded-xl border border-white/[0.07] bg-black/10 p-4">
             <h3 className="text-sm font-semibold text-slate-200">
-              Judge feedback
+              Project description
             </h3>
+
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              {result.feedback || "No feedback has been added."}
+              {result.description ||
+                "No project description available."}
             </p>
           </div>
 
@@ -410,27 +376,25 @@ function ResultDetailsModal({ result, onClose, onTogglePublish }) {
 
             <button
               type="button"
-              onClick={() => onTogglePublish(result.id)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              disabled={publishing || result.published}
+              onClick={() => onPublish(result.resultId)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {result.published ? (
                 <>
-                  <EyeOff size={16} />
-                  Unpublish result
+                  <Globe size={16} />
+                  Published
                 </>
               ) : (
                 <>
                   <Globe size={16} />
-                  Publish result
+                  {publishing
+                    ? "Publishing..."
+                    : "Publish result"}
                 </>
               )}
             </button>
           </div>
-
-          <p className="text-xs leading-5 text-slate-600">
-            Demo mode: publication state changes locally and does not change a
-            public website or database.
-          </p>
         </div>
       </motion.div>
     </motion.div>
@@ -438,36 +402,384 @@ function ResultDetailsModal({ result, onClose, onTogglePublish }) {
 }
 
 export default function Results() {
-  const [results, setResults] = useState(INITIAL_RESULTS);
-  const [hackathonFilter, setHackathonFilter] = useState("hackathon-1");
+  const { getToken } = useAuth();
+
+  const [hackathons, setHackathons] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+
+  const [selectedHackathon, setSelectedHackathon] =
+    useState("");
+
+  const [resultRecord, setResultRecord] = useState(null);
+
+  const [selectedWinners, setSelectedWinners] = useState({
+    first_submission_id: "",
+    second_submission_id: "",
+    third_submission_id: "",
+  });
+
   const [search, setSearch] = useState("");
-  const [publicationFilter, setPublicationFilter] = useState("All");
+  const [publicationFilter, setPublicationFilter] =
+    useState("All");
+
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedResult, setSelectedResult] = useState(null);
+  const [selectedResult, setSelectedResult] =
+    useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingSubmissions, setLoadingSubmissions] =
+    useState(false);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  function showNotice(message) {
+    setNotice(message);
+
+    window.setTimeout(() => {
+      setNotice("");
+    }, 3000);
+  }
+
+  async function apiRequest(path, options = {}) {
+    const token = await getToken();
+
+    const response = await fetch(
+      `${API_BASE_URL}${path}`,
+      {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...(options.headers || {}),
+        },
+      },
+    );
+
+    if (!response.ok) {
+      let message = "Something went wrong.";
+
+      try {
+        const data = await response.json();
+
+        if (data?.detail) {
+          message = data.detail;
+        }
+      } catch {
+        // Ignore invalid error response
+      }
+
+      throw new Error(message);
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  }
+
+  async function loadHackathons() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await apiRequest("/hackathons");
+
+      const list = Array.isArray(data)
+        ? data
+        : data?.items || [];
+
+      setHackathons(list);
+
+      if (list.length > 0) {
+        setSelectedHackathon((current) =>
+          current || String(list[0].id),
+        );
+      }
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Failed to load hackathons.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadSubmissions(hackathonId) {
+    if (!hackathonId) return;
+
+    try {
+      setLoadingSubmissions(true);
+      setError("");
+
+      const data = await apiRequest(
+        "/submissions/organizer/all",
+      );
+
+      const list = Array.isArray(data)
+        ? data
+        : data?.items || [];
+
+      const filtered = list
+        .filter(
+          (submission) =>
+            String(
+              submission.hackathon_id ||
+                submission.hackathon?.id,
+            ) === String(hackathonId),
+        )
+        .map(normalizeSubmission);
+
+      setSubmissions(filtered);
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Failed to load submissions.",
+      );
+
+      setSubmissions([]);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  }
+
+  async function loadResult(hackathonId) {
+    if (!hackathonId) return;
+
+    try {
+      setResultRecord(null);
+
+      setSelectedWinners({
+        first_submission_id: "",
+        second_submission_id: "",
+        third_submission_id: "",
+      });
+
+      const data = await apiRequest(
+        `/results/hackathon/${hackathonId}`,
+      );
+
+      setResultRecord(data);
+
+      setSelectedWinners({
+        first_submission_id:
+          data.first_submission_id || "",
+        second_submission_id:
+          data.second_submission_id || "",
+        third_submission_id:
+          data.third_submission_id || "",
+      });
+    } catch (err) {
+      // 404 simply means result has not been created yet.
+      if (!err?.message?.toLowerCase().includes("no result")) {
+        setResultRecord(null);
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadHackathons();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedHackathon) return;
+
+    setSearch("");
+    setPublicationFilter("All");
+
+    loadSubmissions(selectedHackathon);
+    loadResult(selectedHackathon);
+  }, [selectedHackathon]);
+
+  function handleWinnerSelect(key, value) {
+    setSelectedWinners((current) => {
+      const next = {
+        ...current,
+        [key]: value,
+      };
+
+      Object.keys(next).forEach((winnerKey) => {
+        if (
+          winnerKey !== key &&
+          next[winnerKey] === value &&
+          value
+        ) {
+          next[winnerKey] = "";
+        }
+      });
+
+      return next;
+    });
+  }
+
+  async function saveResult() {
+    if (!selectedHackathon) {
+      showNotice("Please select a hackathon.");
+      return;
+    }
+
+    if (
+      !selectedWinners.first_submission_id &&
+      !selectedWinners.second_submission_id &&
+      !selectedWinners.third_submission_id
+    ) {
+      showNotice("Select at least one winner.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+
+      const payload = {
+        hackathon_id: selectedHackathon,
+        first_submission_id:
+          selectedWinners.first_submission_id || null,
+        second_submission_id:
+          selectedWinners.second_submission_id || null,
+        third_submission_id:
+          selectedWinners.third_submission_id || null,
+      };
+
+      let data;
+
+      if (resultRecord?.id) {
+        data = await apiRequest(
+          `/results/${resultRecord.id}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              first_submission_id:
+                payload.first_submission_id,
+              second_submission_id:
+                payload.second_submission_id,
+              third_submission_id:
+                payload.third_submission_id,
+            }),
+          },
+        );
+      } else {
+        data = await apiRequest("/results", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
+
+      setResultRecord(data);
+
+      showNotice(
+        resultRecord?.id
+          ? "Result updated successfully."
+          : "Result saved successfully.",
+      );
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Failed to save result.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function publishResult(resultId) {
+    if (!resultId) {
+      showNotice("Save the result before publishing.");
+      return;
+    }
+
+    try {
+      setPublishing(true);
+      setError("");
+
+      const data = await apiRequest(
+        `/results/${resultId}/publish`,
+        {
+          method: "POST",
+        },
+      );
+
+      setResultRecord(data);
+
+      showNotice(
+        "Result published successfully.",
+      );
+
+      setSelectedResult((current) =>
+        current
+          ? {
+              ...current,
+              published: true,
+            }
+          : current,
+      );
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Failed to publish result.",
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   const rankedResults = useMemo(() => {
-    return results
-      .filter((result) => result.hackathonId === hackathonFilter)
-      .slice()
-      .sort(
-        (a, b) =>
-          b.score - a.score ||
-          a.project.localeCompare(b.project),
-      )
-      .map((result, index) => ({
-        ...result,
-        rank: index + 1,
-        prize:
-          index === 0
-            ? "Winner"
-            : index === 1
-              ? "Runner-up"
-              : index === 2
-                ? "Second Runner-up"
-                : "Participant",
-      }));
-  }, [results, hackathonFilter]);
+    const selectedMap = [
+      {
+        id: selectedWinners.first_submission_id,
+        rank: 1,
+        prize: "Winner",
+      },
+      {
+        id: selectedWinners.second_submission_id,
+        rank: 2,
+        prize: "Runner-up",
+      },
+      {
+        id: selectedWinners.third_submission_id,
+        rank: 3,
+        prize: "Second Runner-up",
+      },
+    ];
+
+    return selectedMap
+      .filter((item) => item.id)
+      .map((item) => {
+        const submission = submissions.find(
+          (entry) =>
+            String(entry.id) === String(item.id),
+        );
+
+        if (!submission) return null;
+
+        return {
+          ...submission,
+          rank: item.rank,
+          prize: item.prize,
+          published: Boolean(
+            resultRecord?.published,
+          ),
+          resultId: resultRecord?.id || null,
+          hackathon:
+            hackathons.find(
+              (hackathon) =>
+                String(hackathon.id) ===
+                String(selectedHackathon),
+            )?.name || "Hackathon",
+        };
+      })
+      .filter(Boolean);
+  }, [
+    selectedWinners,
+    submissions,
+    resultRecord,
+    hackathons,
+    selectedHackathon,
+  ]);
 
   const filteredResults = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -475,93 +787,48 @@ export default function Results() {
     return rankedResults.filter((result) => {
       const matchesSearch =
         !term ||
-        result.project.toLowerCase().includes(term) ||
-        result.team.toLowerCase().includes(term) ||
-        result.problem.toLowerCase().includes(term);
+        result.project
+          .toLowerCase()
+          .includes(term) ||
+        result.team
+          .toLowerCase()
+          .includes(term) ||
+        result.problem
+          .toLowerCase()
+          .includes(term);
 
       const matchesPublication =
         publicationFilter === "All" ||
-        (publicationFilter === "Published" && result.published) ||
-        (publicationFilter === "Draft" && !result.published);
+        (publicationFilter === "Published" &&
+          result.published) ||
+        (publicationFilter === "Draft" &&
+          !result.published);
 
-      return matchesSearch && matchesPublication;
+      return (
+        matchesSearch &&
+        matchesPublication
+      );
     });
-  }, [rankedResults, search, publicationFilter]);
+  }, [
+    rankedResults,
+    search,
+    publicationFilter,
+  ]);
 
-  const stats = useMemo(
-    () => ({
+  const stats = useMemo(() => {
+    return {
       total: rankedResults.length,
-      published: rankedResults.filter((result) => result.published).length,
-      drafts: rankedResults.filter((result) => !result.published).length,
-      average:
-        rankedResults.length > 0
-          ? rankedResults.reduce((sum, result) => sum + result.score, 0) /
-            rankedResults.length
-          : 0,
-    }),
-    [rankedResults],
-  );
+      published: resultRecord?.published
+        ? rankedResults.length
+        : 0,
+      drafts: resultRecord?.published
+        ? 0
+        : rankedResults.length,
+      average: 0,
+    };
+  }, [rankedResults, resultRecord]);
 
   const topThree = rankedResults.slice(0, 3);
-
-  function showNotice(message) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 3000);
-  }
-
-  function togglePublish(resultId) {
-    setResults((current) =>
-      current.map((result) =>
-        result.id === resultId
-          ? { ...result, published: !result.published }
-          : result,
-      ),
-    );
-
-    setSelectedResult((current) =>
-      current?.id === resultId
-        ? { ...current, published: !current.published }
-        : current,
-    );
-
-    const result = results.find((item) => item.id === resultId);
-
-    showNotice(
-      result?.published
-        ? "Result unpublished in this demo."
-        : "Result published in this demo.",
-    );
-  }
-
-  function toggleAllPublished() {
-    const allPublished =
-      rankedResults.length > 0 &&
-      rankedResults.every((result) => result.published);
-
-    setResults((current) =>
-      current.map((result) =>
-        result.hackathonId === hackathonFilter
-          ? { ...result, published: !allPublished }
-          : result,
-      ),
-    );
-
-    if (
-      selectedResult &&
-      selectedResult.hackathonId === hackathonFilter
-    ) {
-      setSelectedResult((current) => ({
-        ...current,
-        published: !allPublished,
-      }));
-    }
-
-    showNotice(
-      allPublished
-        ? "All results unpublished in this demo."
-        : "All results published in this demo.",
-    );
-  }
 
   function resetFilters() {
     setSearch("");
@@ -571,6 +838,7 @@ export default function Results() {
   return (
     <div className="min-h-screen bg-[#080b14] px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-7">
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -578,7 +846,6 @@ export default function Results() {
           className="relative overflow-hidden rounded-3xl border border-cyan-300/15 bg-gradient-to-br from-[#111a2b] via-[#101523] to-[#10101f] p-6 sm:p-9"
         >
           <div className="pointer-events-none absolute -right-12 -top-20 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-0 right-1/3 h-36 w-36 rounded-full bg-amber-400/10 blur-3xl" />
 
           <div className="relative">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.17em] text-cyan-300">
@@ -589,46 +856,32 @@ export default function Results() {
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
               <div>
                 <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                  Hackathon <span className="text-cyan-300">Results</span>
+                  Hackathon{" "}
+                  <span className="text-cyan-300">
+                    Results
+                  </span>
                 </h1>
 
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-                  Celebrate winning teams, review final standings, and manage
-                  result publication for each hackathon.
+                  Select winning teams, review final
+                  standings, and publish results for
+                  your hackathon.
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => exportResults(filteredResults)}
-                  disabled={filteredResults.length === 0}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.07] disabled:opacity-40"
-                >
-                  <Download size={16} />
-                  Export CSV
-                </button>
-
-                <button
-                  type="button"
-                  onClick={toggleAllPublished}
-                  disabled={rankedResults.length === 0}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:opacity-40"
-                >
-                  {rankedResults.length > 0 &&
-                  rankedResults.every((result) => result.published) ? (
-                    <>
-                      <EyeOff size={16} />
-                      Unpublish all
-                    </>
-                  ) : (
-                    <>
-                      <Globe size={16} />
-                      Publish all
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  exportResults(filteredResults)
+                }
+                disabled={
+                  filteredResults.length === 0
+                }
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.07] disabled:opacity-40"
+              >
+                <Download size={16} />
+                Export CSV
+              </button>
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-xs text-slate-500">
@@ -636,10 +889,12 @@ export default function Results() {
                 <Trophy size={14} />
                 Final rankings
               </span>
+
               <span className="inline-flex items-center gap-2">
                 <Medal size={14} />
                 Winners podium
               </span>
+
               <span className="inline-flex items-center gap-2">
                 <Globe size={14} />
                 Publication controls
@@ -648,48 +903,70 @@ export default function Results() {
           </div>
         </motion.div>
 
-        {/* Prototype warning */}
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] px-4 py-3.5">
-          <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-300" />
-          <div>
-            <p className="text-sm font-semibold text-amber-100">
-              Frontend demo mode
-            </p>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
-              Sample projects and scores are shown here. Publishing and
-              unpublishing only changes local page state; no public announcement
-              is made and no result is saved to the database.
-            </p>
+        {/* Error */}
+        {error && (
+          <div className="flex items-start gap-3 rounded-2xl border border-red-300/15 bg-red-300/[0.04] px-4 py-3.5">
+            <AlertCircle
+              size={18}
+              className="mt-0.5 shrink-0 text-red-300"
+            />
+
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-200">
+                Something went wrong
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-400">
+                {error}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="text-slate-500 hover:text-white"
+            >
+              <X size={16} />
+            </button>
           </div>
-        </div>
+        )}
 
         {/* Hackathon selector */}
         <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">Select hackathon</h2>
+            <h2 className="text-lg font-bold text-white">
+              Select hackathon
+            </h2>
+
             <p className="mt-1 text-sm text-slate-500">
-              Rankings are calculated separately for each event.
+              Rankings are managed separately for
+              each event.
             </p>
           </div>
 
           <div className="relative sm:w-80">
-            <CalendarDays
-              size={16}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-            />
-
             <select
-              value={hackathonFilter}
-              onChange={(event) => {
-                setHackathonFilter(event.target.value);
-                setSearch("");
-                setPublicationFilter("All");
-              }}
+              value={selectedHackathon}
+              onChange={(event) =>
+                setSelectedHackathon(
+                  event.target.value,
+                )
+              }
+              disabled={loading}
               aria-label="Select hackathon"
-              className="w-full appearance-none rounded-xl border border-white/10 bg-[#101522] py-3.5 pl-10 pr-10 text-sm text-slate-200 outline-none focus:border-cyan-300/40"
+              className="w-full appearance-none rounded-xl border border-white/10 bg-[#101522] py-3.5 px-4 pr-10 text-sm text-slate-200 outline-none focus:border-cyan-300/40 disabled:opacity-50"
             >
-              {HACKATHONS.map((hackathon) => (
-                <option key={hackathon.id} value={hackathon.id}>
+              {hackathons.length === 0 && (
+                <option value="">
+                  No hackathons found
+                </option>
+              )}
+
+              {hackathons.map((hackathon) => (
+                <option
+                  key={hackathon.id}
+                  value={hackathon.id}
+                >
                   {hackathon.name}
                 </option>
               ))}
@@ -702,11 +979,110 @@ export default function Results() {
           </div>
         </section>
 
+        {/* Winner selection */}
+        <section className="rounded-3xl border border-white/[0.08] bg-[#101522] p-5 sm:p-6">
+          <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="text-lg font-bold text-white">
+                Select winners
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Choose the top three submissions for
+                this hackathon.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={
+                  saving ||
+                  loadingSubmissions ||
+                  !selectedHackathon
+                }
+                onClick={saveResult}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <CheckCircle2 size={16} />
+
+                {saving
+                  ? "Saving..."
+                  : resultRecord
+                    ? "Update Result"
+                    : "Save Result"}
+              </button>
+
+              {resultRecord && (
+                <button
+                  type="button"
+                  disabled={
+                    saving ||
+                    publishing ||
+                    resultRecord.published
+                  }
+                  onClick={() =>
+                    publishResult(resultRecord.id)
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-300/15 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {resultRecord.published ? (
+                    <>
+                      <Globe size={16} />
+                      Published
+                    </>
+                  ) : (
+                    <>
+                      <Globe size={16} />
+                      {publishing
+                        ? "Publishing..."
+                        : "Publish Result"}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {loadingSubmissions ? (
+            <div className="py-12 text-center">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+
+              <p className="mt-3 text-sm text-slate-500">
+                Loading submissions...
+              </p>
+            </div>
+          ) : submissions.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
+              <Trophy
+                size={28}
+                className="mx-auto text-slate-600"
+              />
+
+              <h3 className="mt-4 font-bold text-white">
+                No submissions available
+              </h3>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Teams must submit their projects before
+                winners can be selected.
+              </p>
+            </div>
+          ) : (
+            <WinnerSelection
+              submissions={submissions}
+              selectedWinners={selectedWinners}
+              onSelect={handleWinnerSelect}
+              saving={saving}
+            />
+          )}
+        </section>
+
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {[
             {
-              label: "Ranked projects",
+              label: "Winning projects",
               value: stats.total,
               icon: Users,
               color: "text-cyan-300",
@@ -727,9 +1103,14 @@ export default function Results() {
               bg: "bg-amber-300/10",
             },
             {
-              label: "Average score",
-              value: stats.average.toFixed(1),
-              icon: Target,
+              label: "Hackathon",
+              value:
+                hackathons.find(
+                  (hackathon) =>
+                    String(hackathon.id) ===
+                    String(selectedHackathon),
+                )?.name || "—",
+              icon: Trophy,
               color: "text-violet-300",
               bg: "bg-violet-300/10",
             },
@@ -739,9 +1120,17 @@ export default function Results() {
             return (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.06 }}
+                initial={{
+                  opacity: 0,
+                  y: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                transition={{
+                  delay: index * 0.06,
+                }}
                 className="rounded-2xl border border-white/[0.08] bg-[#101522] p-4 sm:p-5"
               >
                 <div className="flex items-start justify-between gap-2">
@@ -749,12 +1138,20 @@ export default function Results() {
                     {stat.label}
                   </p>
 
-                  <div className={`rounded-xl p-2 ${stat.bg} ${stat.color}`}>
+                  <div
+                    className={`rounded-xl p-2 ${stat.bg} ${stat.color}`}
+                  >
                     <Icon size={17} />
                   </div>
                 </div>
 
-                <p className="mt-4 text-3xl font-black tracking-tight text-white">
+                <p
+                  className={`mt-4 ${
+                    stat.label === "Hackathon"
+                      ? "truncate text-sm"
+                      : "text-3xl"
+                  } font-black tracking-tight text-white`}
+                >
                   {stat.value}
                 </p>
               </motion.div>
@@ -770,9 +1167,12 @@ export default function Results() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-white">Winners podium</h2>
+              <h2 className="text-lg font-bold text-white">
+                Winners podium
+              </h2>
+
               <p className="mt-1 text-xs text-slate-500">
-                Top three projects by overall score
+                Selected winners for this hackathon
               </p>
             </div>
           </div>
@@ -787,12 +1187,28 @@ export default function Results() {
                   <motion.button
                     type="button"
                     key={result.id}
-                    onClick={() => setSelectedResult(result)}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.08 }}
+                    onClick={() =>
+                      setSelectedResult({
+                        ...result,
+                        resultId:
+                          resultRecord?.id,
+                      })
+                    }
+                    initial={{
+                      opacity: 0,
+                      y: 12,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    transition={{
+                      delay: index * 0.08,
+                    }}
                     className={`relative overflow-hidden rounded-2xl border p-5 text-left transition hover:-translate-y-1 ${medal.color} ${
-                      index === 0 ? "lg:-translate-y-2" : ""
+                      index === 0
+                        ? "lg:-translate-y-2"
+                        : ""
                     }`}
                   >
                     <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/[0.03] blur-2xl" />
@@ -823,20 +1239,14 @@ export default function Results() {
                       {result.problem}
                     </p>
 
-                    <div className="relative mt-5 flex items-end justify-between gap-3 border-t border-white/10 pt-4">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-slate-500">
-                          Overall score
-                        </p>
-                        <p className={`mt-1 text-3xl font-black ${medal.text}`}>
-                          {result.score.toFixed(1)}
-                          <span className="ml-1 text-xs text-slate-500">
-                            / 10
-                          </span>
-                        </p>
-                      </div>
+                    <div className="relative mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+                      <p className={`font-black ${medal.text}`}>
+                        #{result.rank}
+                      </p>
 
-                      <StatusBadge published={result.published} />
+                      <StatusBadge
+                        published={result.published}
+                      />
                     </div>
                   </motion.button>
                 );
@@ -844,7 +1254,7 @@ export default function Results() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-500">
-              No results are available for this hackathon.
+              No winners selected yet.
             </div>
           )}
         </section>
@@ -860,7 +1270,9 @@ export default function Results() {
 
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) =>
+                  setSearch(event.target.value)
+                }
                 placeholder="Search by project, team, or problem..."
                 className="w-full rounded-xl border border-white/10 bg-[#101522] py-3.5 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300/40"
               />
@@ -868,7 +1280,11 @@ export default function Results() {
 
             <button
               type="button"
-              onClick={() => setShowFilters((current) => !current)}
+              onClick={() =>
+                setShowFilters(
+                  (current) => !current,
+                )
+              }
               className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3.5 text-sm font-semibold transition ${
                 showFilters
                   ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
@@ -883,19 +1299,37 @@ export default function Results() {
           <AnimatePresence>
             {showFilters && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                initial={{
+                  opacity: 0,
+                  height: 0,
+                }}
+                animate={{
+                  opacity: 1,
+                  height: "auto",
+                }}
+                exit={{
+                  opacity: 0,
+                  height: 0,
+                }}
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-[#101522] p-4">
-                  {["All", "Published", "Draft"].map((filter) => (
+                  {[
+                    "All",
+                    "Published",
+                    "Draft",
+                  ].map((filter) => (
                     <button
                       key={filter}
                       type="button"
-                      onClick={() => setPublicationFilter(filter)}
+                      onClick={() =>
+                        setPublicationFilter(
+                          filter,
+                        )
+                      }
                       className={`rounded-xl border px-4 py-2.5 text-xs font-semibold transition ${
-                        publicationFilter === filter
+                        publicationFilter ===
+                        filter
                           ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
                           : "border-white/10 text-slate-400 hover:bg-white/5"
                       }`}
@@ -909,17 +1343,21 @@ export default function Results() {
           </AnimatePresence>
         </section>
 
-        {/* Results table */}
+        {/* Final standings */}
         <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#101522]">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/[0.08] p-5 sm:p-6">
             <div>
-              <h2 className="font-bold text-white">Final standings</h2>
+              <h2 className="font-bold text-white">
+                Final standings
+              </h2>
+
               <p className="mt-1 text-xs text-slate-500">
-                {filteredResults.length} results · Sorted by score
+                {filteredResults.length} selected results
               </p>
             </div>
 
-            {(search || publicationFilter !== "All") && (
+            {(search ||
+              publicationFilter !== "All") && (
               <button
                 type="button"
                 onClick={resetFilters}
@@ -933,16 +1371,15 @@ export default function Results() {
 
           {filteredResults.length > 0 ? (
             <>
-              {/* Desktop table */}
+              {/* Desktop */}
               <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[850px] text-left">
+                <table className="w-full min-w-[800px] text-left">
                   <thead>
                     <tr className="border-b border-white/[0.07] bg-white/[0.02]">
                       {[
                         "Rank",
                         "Project / Team",
                         "Problem",
-                        "Score",
                         "Publication",
                         "Details",
                       ].map((heading) => (
@@ -957,149 +1394,171 @@ export default function Results() {
                   </thead>
 
                   <tbody className="divide-y divide-white/[0.06]">
-                    {filteredResults.map((result) => (
-                      <tr
-                        key={result.id}
-                        className="transition hover:bg-white/[0.025]"
-                      >
-                        <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm font-black ${
-                              result.rank === 1
-                                ? "border-amber-300/25 bg-amber-300/10 text-amber-200"
-                                : result.rank === 2
-                                  ? "border-slate-300/20 bg-slate-300/[0.05] text-slate-200"
-                                  : result.rank === 3
-                                    ? "border-orange-300/20 bg-orange-300/[0.05] text-orange-200"
-                                    : "border-white/10 text-slate-500"
-                            }`}
-                          >
-                            #{result.rank}
-                          </span>
-                        </td>
-
-                        <td className="max-w-[230px] px-5 py-4">
-                          <p className="truncate text-sm font-semibold text-slate-200">
-                            {result.project}
-                          </p>
-                          <p className="mt-1 truncate text-xs text-slate-500">
-                            {result.team}
-                          </p>
-                        </td>
-
-                        <td className="max-w-[220px] px-5 py-4">
-                          <p className="truncate text-xs text-slate-400">
-                            {result.problem}
-                          </p>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <p className="text-base font-black text-cyan-300">
-                            {result.score.toFixed(1)}
-                            <span className="ml-1 text-xs font-medium text-slate-600">
-                              / 10
+                    {filteredResults.map(
+                      (result) => (
+                        <tr
+                          key={result.id}
+                          className="transition hover:bg-white/[0.025]"
+                        >
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm font-black ${
+                                result.rank === 1
+                                  ? "border-amber-300/25 bg-amber-300/10 text-amber-200"
+                                  : result.rank === 2
+                                    ? "border-slate-300/20 bg-slate-300/[0.05] text-slate-200"
+                                    : "border-orange-300/20 bg-orange-300/[0.05] text-orange-200"
+                              }`}
+                            >
+                              #{result.rank}
                             </span>
-                          </p>
-                        </td>
+                          </td>
 
-                        <td className="px-5 py-4">
-                          <StatusBadge published={result.published} />
-                        </td>
+                          <td className="max-w-[230px] px-5 py-4">
+                            <p className="truncate text-sm font-semibold text-slate-200">
+                              {result.project}
+                            </p>
 
-                        <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedResult(result)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-200"
-                          >
-                            <Eye size={14} />
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            <p className="mt-1 truncate text-xs text-slate-500">
+                              {result.team}
+                            </p>
+                          </td>
+
+                          <td className="max-w-[220px] px-5 py-4">
+                            <p className="truncate text-xs text-slate-400">
+                              {result.problem}
+                            </p>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <StatusBadge
+                              published={
+                                result.published
+                              }
+                            />
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedResult(
+                                  {
+                                    ...result,
+                                    resultId:
+                                      resultRecord?.id,
+                                  },
+                                )
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-300/25 hover:text-cyan-200"
+                            >
+                              <Eye size={14} />
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </div>
 
-              {/* Mobile cards */}
+              {/* Mobile */}
               <div className="grid gap-3 p-4 md:hidden">
-                {filteredResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="rounded-xl border border-white/[0.07] bg-black/10 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-cyan-300">
-                          RANK #{result.rank}
-                        </p>
-                        <h3 className="mt-1 break-words font-bold text-white">
-                          {result.project}
-                        </h3>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {result.team}
-                        </p>
+                {filteredResults.map(
+                  (result) => (
+                    <div
+                      key={result.id}
+                      className="rounded-xl border border-white/[0.07] bg-black/10 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-cyan-300">
+                            RANK #{result.rank}
+                          </p>
+
+                          <h3 className="mt-1 break-words font-bold text-white">
+                            {result.project}
+                          </h3>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            {result.team}
+                          </p>
+                        </div>
                       </div>
 
-                      <p className="shrink-0 text-lg font-black text-cyan-300">
-                        {result.score.toFixed(1)}
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        {result.problem}
                       </p>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <StatusBadge
+                          published={
+                            result.published
+                          }
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedResult({
+                              ...result,
+                              resultId:
+                                resultRecord?.id,
+                            })
+                          }
+                          className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300"
+                        >
+                          <Eye size={14} />
+                          View result
+                        </button>
+                      </div>
                     </div>
-
-                    <p className="mt-3 text-xs leading-5 text-slate-400">
-                      {result.problem}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                      <StatusBadge published={result.published} />
-
-                      <button
-                        type="button"
-                        onClick={() => setSelectedResult(result)}
-                        className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-slate-300"
-                      >
-                        <Eye size={14} />
-                        View result
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </>
           ) : (
             <div className="px-5 py-14 text-center">
-              <Trophy size={28} className="mx-auto text-slate-600" />
-              <h3 className="mt-4 font-bold text-white">No results found</h3>
+              <Trophy
+                size={28}
+                className="mx-auto text-slate-600"
+              />
+
+              <h3 className="mt-4 font-bold text-white">
+                No results found
+              </h3>
+
               <p className="mt-2 text-sm text-slate-500">
-                Try a different search term or publication filter.
+                Select winners above or try a
+                different filter.
               </p>
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5"
-              >
-                <RotateCcw size={14} />
-                Clear filters
-              </button>
             </div>
           )}
         </section>
 
         <div className="flex flex-col gap-2 border-t border-white/[0.07] py-4 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>Skill Incubator · Organizer workspace</span>
-          <span>Results and rankings · Frontend prototype</span>
+          <span>
+            Skill Incubator · Organizer workspace
+          </span>
+
+          <span>
+            Results and rankings · Live backend
+          </span>
         </div>
       </div>
 
-      {/* Result details */}
+      {/* Details modal */}
       <AnimatePresence>
         {selectedResult && (
           <ResultDetailsModal
             key={selectedResult.id}
             result={selectedResult}
-            onClose={() => setSelectedResult(null)}
-            onTogglePublish={togglePublish}
+            onClose={() =>
+              setSelectedResult(null)
+            }
+            onPublish={publishResult}
+            publishing={publishing}
           />
         )}
       </AnimatePresence>
@@ -1109,13 +1568,29 @@ export default function Results() {
         {notice && (
           <motion.div
             role="status"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
+            initial={{
+              opacity: 0,
+              y: 12,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              y: 8,
+            }}
             className="fixed bottom-5 right-5 z-[60] flex items-center gap-3 rounded-2xl border border-emerald-300/20 bg-[#101a20] px-4 py-3.5 shadow-2xl"
           >
-            <CheckCircle2 size={18} className="shrink-0 text-emerald-300" />
-            <span className="text-sm text-slate-200">{notice}</span>
+            <CheckCircle2
+              size={18}
+              className="shrink-0 text-emerald-300"
+            />
+
+            <span className="text-sm text-slate-200">
+              {notice}
+            </span>
+
             <button
               type="button"
               onClick={() => setNotice("")}

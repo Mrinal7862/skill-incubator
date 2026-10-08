@@ -76,17 +76,22 @@ def _get_owned_problem_statement(
 
 
 def get_problem_statements(
-    db: Session,
-    hackathon_id: UUID,
-    current_user: User,
-) -> list[ProblemStatement]:
-    _get_owned_hackathon(db, hackathon_id, current_user)
+        db: Session,
+        hackathon_id: UUID,
+        current_user: User,
+    ) -> list[ProblemStatement]:
+        hackathon = db.get(Hackathon, hackathon_id)
 
-    return ProblemStatementRepository.get_by_hackathon(
-        db,
-        hackathon_id,
+        if hackathon is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Hackathon not found.",
+            )
+
+        return ProblemStatementRepository.get_by_hackathon(
+            db,
+            hackathon_id,
     )
-
 
 def create_problem_statement(
     db: Session,

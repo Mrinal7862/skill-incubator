@@ -7,6 +7,9 @@ from app.api.v1.teams import router as teams_router
 from app.api.v1.problem_statements import router as problem_statements_router
 from app.api.v1.participants import router as participants_router
 from app.api.v1 import hackathon_registrations
+from app.api.v1 import submissions
+from app.api.v1 import result
+
 api_router = APIRouter(
     prefix="/api/v1",
 )
@@ -17,3 +20,5 @@ api_router.include_router(teams_router)
 api_router.include_router(problem_statements_router)
 api_router.include_router(participants_router)
 api_router.include_router(hackathon_registrations.router)
+api_router.include_router(submissions.router)
+api_router.include_router(result.router)

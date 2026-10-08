@@ -9,13 +9,15 @@ import DashboardLayout from './DashboardLayout'
 import StudentDashboard from '../../pages/dashboard/StudentDashboard'
 import OrganizerDashboard from '../../pages/dashboard/OrganizerDashboard'
 
-// Student pages
+// Student Pages
 import Hackathons from '../../pages/student/Hackathons'
 import HackathonDetails from '../../pages/student/HackathonDetails'
 import MyTeams from '../../pages/student/MyTeams'
 import MyRegistrations from '../../pages/student/MyRegistrations'
+import StudentResults from '../../pages/student/Results'
+import MySubmissions from '../../pages/student/MySubmissions'
 
-// Organizer pages
+// Organizer Pages
 import MyHackathons from '../../pages/organizer/MyHackathons'
 import CreateHackathon from '../../pages/organizer/CreateHackathon'
 import ManageHackathon from '../../pages/organizer/ManageHackathon'
@@ -26,7 +28,7 @@ import Submissions from '../../pages/organizer/Submissions'
 import Evaluation from '../../pages/organizer/Evaluation'
 import Results from '../../pages/organizer/Results'
 import Analytics from '../../pages/organizer/Analytics'
-import StudentResults from '../../pages/student/Results'
+
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ||
     'http://localhost:8000/api/v1'
@@ -104,7 +106,7 @@ export default function RoleDashboardRoute({ allowedRole }) {
                 if (!cancelled) {
                     setError(
                         err.message ||
-                        'Something went wrong.'
+                            'Something went wrong.'
                     )
                 }
             } finally {
@@ -181,10 +183,9 @@ export default function RoleDashboardRoute({ allowedRole }) {
             user={user}
         >
             {allowedRole === 'STUDENT' ? (
-                /* =========================
-                   STUDENT ROUTES
-                ========================== */
+                // STUDENT ROUTES
                 <Routes>
+
                     {/* Dashboard */}
                     <Route
                         index
@@ -203,7 +204,7 @@ export default function RoleDashboardRoute({ allowedRole }) {
                         element={<HackathonDetails />}
                     />
 
-                    {/* Your Hackathons */}
+                    {/* My Registrations */}
                     <Route
                         path="registrations"
                         element={<MyRegistrations />}
@@ -213,6 +214,12 @@ export default function RoleDashboardRoute({ allowedRole }) {
                     <Route
                         path="teams"
                         element={<MyTeams />}
+                    />
+
+                    {/* My Submissions */}
+                    <Route
+                        path="submissions"
+                        element={<MySubmissions />}
                     />
 
                     {/* Results */}
@@ -226,12 +233,12 @@ export default function RoleDashboardRoute({ allowedRole }) {
                         path="*"
                         element={<StudentDashboard />}
                     />
+
                 </Routes>
             ) : (
-                /* =========================
-                   ORGANIZER ROUTES
-                ========================== */
+                // ORGANIZER ROUTES
                 <Routes>
+
                     {/* Organizer Dashboard */}
                     <Route
                         index
@@ -244,16 +251,19 @@ export default function RoleDashboardRoute({ allowedRole }) {
                         element={<MyHackathons />}
                     />
 
+                    {/* Create Hackathon */}
                     <Route
                         path="hackathons/new"
                         element={<CreateHackathon />}
                     />
 
+                    {/* Manage Hackathon */}
                     <Route
                         path="hackathons/:id/manage"
                         element={<ManageHackathon />}
                     />
 
+                    {/* Edit Hackathon */}
                     <Route
                         path="hackathons/:id/edit"
                         element={<EditHackathon />}
@@ -277,7 +287,7 @@ export default function RoleDashboardRoute({ allowedRole }) {
                         element={<Submissions />}
                     />
 
-                    {/* Evaluation */}
+                    Evaluation
                     <Route
                         path="evaluation"
                         element={<Evaluation />}
@@ -300,10 +310,7 @@ export default function RoleDashboardRoute({ allowedRole }) {
                         path="*"
                         element={<OrganizerDashboard />}
                     />
-                    <Route
-                        path="results"
-                        element={<StudentResults />}
-                    />
+
                 </Routes>
             )}
         </DashboardLayout>
