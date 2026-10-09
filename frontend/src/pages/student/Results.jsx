@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@clerk/react'
 
-const API_BASE_URL = 'http://localhost:8000/api/v1'
+const API_BASE_URL = import.meta.env.API_BASE_URL;
 
 function formatDate(dateString) {
   if (!dateString) return 'Date unavailable'
